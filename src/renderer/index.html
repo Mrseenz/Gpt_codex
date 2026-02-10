@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GPT Codex Desktop</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h1>GPT Codex</h1>
+        <div class="stack-buttons">
+          <button id="new-chat">+ New Chat</button>
+          <button id="import-chat">Import Chat</button>
+        </div>
+      </div>
+      <div id="chat-list" class="chat-list"></div>
+    </aside>
+
+    <main class="main">
+      <header class="toolbar">
+        <div class="toolbar-left">
+          <select id="provider"></select>
+          <button id="test-connection">Test Connection</button>
+          <button id="export-chat">Export</button>
+          <button id="duplicate-chat">Duplicate</button>
+          <button id="rename-chat">Rename</button>
+          <button id="clear-chat">Clear</button>
+          <button id="delete-chat" class="danger">Delete</button>
+        </div>
+        <div class="toolbar-right">
+          <button id="open-collab">Collab</button>
+          <button id="open-command-center">Command Center</button>
+          <button id="open-research">Research Lab</button>
+          <button id="open-mcp">MCP</button>
+          <button id="open-vscode">VS Code</button>
+          <button id="open-gguf">GGUF</button>
+          <button id="open-settings">Settings</button>
+        </div>
+      </header>
+
+      <section id="messages" class="messages"></section>
+
+      <footer class="composer">
+        <div class="composer-buttons">
+          <button id="regenerate-last">Regenerate Last</button>
+        </div>
+        <textarea id="composer-input" placeholder="Ask anything... (Enter to send, Shift+Enter for newline)" rows="4"></textarea>
+        <button id="send-message">Send</button>
+      </footer>
+
+      <div id="status-bar" class="status-bar">Ready.</div>
+    </main>
+
+    <dialog id="settings-dialog">
+      <form id="settings-form" method="dialog">
+        <h2>Settings</h2>
+        <label>System Prompt <textarea id="system-prompt" rows="3"></textarea></label>
+        <div class="row-2">
+          <label>Temperature <input id="temperature" type="number" min="0" max="2" step="0.1" /></label>
+          <label>Max Tokens <input id="max-tokens" type="number" min="1" max="32768" step="1" /></label>
+        </div>
+
+        <h3>OpenAI</h3>
+        <label>Base URL <input id="openai-base-url" type="text" /></label>
+        <label>API Key <input id="openai-api-key" type="password" /></label>
+        <label>Model <input id="openai-model" type="text" /></label>
+
+        <h3>OpenAI-Compatible</h3>
+        <label>Base URL <input id="compat-base-url" type="text" /></label>
+        <label>API Key <input id="compat-api-key" type="text" /></label>
+        <label>Model <input id="compat-model" type="text" /></label>
+
+        <h3>GGUF endpoint settings</h3>
+        <div class="row-2">
+          <label>Host <input id="gguf-host" type="text" /></label>
+          <label>Port <input id="gguf-port" type="number" /></label>
+        </div>
+        <label>Model Alias <input id="gguf-alias" type="text" /></label>
+
+        <h3>Ollama</h3>
+        <label>Base URL <input id="ollama-base-url" type="text" /></label>
+        <label>Model <input id="ollama-model" type="text" /></label>
+
+        <menu>
+          <button value="cancel">Cancel</button>
+          <button id="save-settings" value="default">Save</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <dialog id="collab-dialog">
+      <form id="collab-form" method="dialog">
+        <h2>Interactive Collaboration</h2>
+        <label>Response personality
+          <select id="personality">
+            <option value="conversational">Conversational</option>
+            <option value="terse">Terse</option>
+          </select>
+        </label>
+        <label>Steering note (nudge current direction)
+          <textarea id="steering-note" rows="3" placeholder="e.g. focus on migrations first, delay UI polish"></textarea>
+        </label>
+        <menu>
+          <button value="cancel">Close</button>
+          <button id="apply-steering" value="default">Apply</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <dialog id="command-center-dialog">
+      <form id="command-center-form" method="dialog">
+        <h2>Codex Command Center</h2>
+
+        <div class="grid-2">
+          <section>
+            <h3>Agents</h3>
+            <div id="agent-list" class="panel-list"></div>
+            <label>Agent name <input id="agent-name" type="text" placeholder="Migration agent" /></label>
+            <label>Goal <input id="agent-goal" type="text" placeholder="Migrate API layer to v2" /></label>
+            <div class="row-actions">
+              <button id="agent-create" type="button">Create Agent</button>
+              <button id="agent-delete" type="button">Delete Selected</button>
+            </div>
+            <label>Plan step <input id="agent-step" type="text" placeholder="Refactor auth middleware" /></label>
+            <div class="row-actions">
+              <button id="agent-add-step" type="button">Add Step</button>
+              <button id="agent-run-step" type="button">Run Shell Step</button>
+            </div>
+            <label>Shell command for selected agent <input id="agent-command" type="text" placeholder="npm test" /></label>
+            <pre id="agent-logs" class="terminal"></pre>
+          </section>
+
+          <section>
+            <h3>Git & Worktrees</h3>
+            <pre id="git-output" class="terminal"></pre>
+            <div class="row-actions">
+              <button id="git-refresh" type="button">Refresh Status</button>
+              <button id="git-branches" type="button">List Branches</button>
+              <button id="git-worktrees" type="button">List Worktrees</button>
+            </div>
+            <label>Worktree path <input id="worktree-path" type="text" placeholder="../repo-feature" /></label>
+            <label>Branch <input id="worktree-branch" type="text" placeholder="feature/agent-1" /></label>
+            <div class="row-actions">
+              <button id="worktree-add" type="button">Add Worktree</button>
+              <button id="worktree-remove" type="button">Remove Worktree</button>
+            </div>
+
+            <h3>Integrated Terminal</h3>
+            <div class="row-actions">
+              <button id="terminal-start" type="button">Start Terminal</button>
+              <button id="terminal-stop" type="button">Stop Terminal</button>
+            </div>
+            <label>Input <input id="terminal-input" type="text" placeholder="git status" /></label>
+            <button id="terminal-send" type="button">Send</button>
+            <pre id="terminal-output" class="terminal"></pre>
+
+            <h3>File Explorer (VS Code-inspired)</h3>
+            <div class="row-actions">
+              <button id="explorer-refresh" type="button">Refresh Tree</button>
+              <button id="explorer-new-file" type="button">New File</button>
+              <button id="explorer-new-folder" type="button">New Folder</button>
+              <button id="explorer-rename" type="button">Rename</button>
+              <button id="explorer-delete" type="button">Delete</button>
+            </div>
+            <div class="grid-2">
+              <div>
+                <div id="explorer-tree" class="panel-list explorer-tree"></div>
+              </div>
+              <div>
+                <label>Selected path <input id="explorer-selected-path" type="text" readonly /></label>
+                <textarea id="explorer-editor" rows="12" placeholder="Select a file to edit"></textarea>
+                <div class="row-actions">
+                  <button id="explorer-open" type="button">Open File</button>
+                  <button id="explorer-save" type="button">Save File</button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <menu>
+          <button value="cancel">Close</button>
+        </menu>
+      </form>
+    </dialog>
+
+
+
+    <dialog id="research-dialog">
+      <form id="research-form" method="dialog">
+        <h2>Self-Evolution Research Lab</h2>
+        <p>Run repository research cycles and promote findings into executable agent plans.</p>
+        <div id="research-list" class="panel-list"></div>
+        <label>Title <input id="research-title" type="text" placeholder="Improve migration safety" /></label>
+        <label>Objective <textarea id="research-objective" rows="3" placeholder="Research how to evolve IDE for safer automated migrations"></textarea></label>
+        <div class="row-actions">
+          <button id="research-create" type="button">Create Job</button>
+          <button id="research-run" type="button">Run Research</button>
+          <button id="research-promote" type="button">Promote to Agent</button>
+          <button id="research-delete" type="button">Delete</button>
+        </div>
+        <pre id="research-report" class="terminal"></pre>
+        <menu><button value="cancel">Close</button></menu>
+      </form>
+    </dialog>
+
+    <dialog id="mcp-dialog">
+      <form id="mcp-form" method="dialog">
+        <h2>MCP Servers</h2>
+        <div id="mcp-server-list" class="panel-list"></div>
+        <label>Name <input id="mcp-name" type="text" /></label>
+        <div class="row-2">
+          <label>Transport
+            <select id="mcp-transport"><option value="stdio">stdio</option><option value="sse">sse</option></select>
+          </label>
+          <label>Enabled
+            <select id="mcp-enabled"><option value="true">true</option><option value="false">false</option></select>
+          </label>
+        </div>
+        <label>Command <input id="mcp-command" type="text" /></label>
+        <label>Args <input id="mcp-args" type="text" /></label>
+        <label>URL <input id="mcp-url" type="text" /></label>
+        <menu><button value="cancel">Close</button><button id="mcp-add" type="button">Add</button><button id="mcp-save" value="default">Save</button></menu>
+      </form>
+    </dialog>
+
+    <dialog id="vscode-dialog">
+      <form id="vscode-form" method="dialog">
+        <h2>VS Code Integration</h2>
+        <label>VS Code binary path <input id="vscode-binary" type="text" /></label>
+        <label>Workspace path <input id="vscode-workspace" type="text" /></label>
+        <label>Extensions directory <input id="vscode-extensions-dir" type="text" /></label>
+        <div class="row-actions"><button id="vscode-launch" type="button">Launch VS Code</button><button id="vscode-install-vsix" type="button">Install VSIX</button></div>
+        <menu><button value="cancel">Close</button><button id="vscode-save" value="default">Save</button></menu>
+      </form>
+    </dialog>
+
+    <dialog id="gguf-dialog">
+      <form id="gguf-form" method="dialog">
+        <h2>GGUF Local Server</h2>
+        <label>llama.cpp server binary <input id="gguf-binary" type="text" /></label>
+        <label>GGUF model path <input id="gguf-model" type="text" /></label>
+        <div class="row-2">
+          <label>Context size <input id="gguf-ctx" type="number" min="512" step="256" /></label>
+          <label>GPU layers <input id="gguf-gpu-layers" type="number" min="0" step="1" /></label>
+        </div>
+        <div class="row-actions">
+          <button id="gguf-start" type="button">Start GGUF Server</button>
+          <button id="gguf-stop" type="button">Stop GGUF Server</button>
+          <button id="gguf-use-provider" type="button">Switch to GGUF Provider</button>
+        </div>
+        <menu><button value="cancel">Close</button><button id="gguf-save" value="default">Save</button></menu>
+      </form>
+    </dialog>
+
+    <script src="./renderer.js"></script>
+  </body>
+</html>
